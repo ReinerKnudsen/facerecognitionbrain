@@ -5,8 +5,9 @@ import Logo from './components/Logo/Logo';
 import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm';
 import Rank from './components/Rank/Rank';
 import FaceRecognition from './components/FaceRecognition/FaceRecognition';
+import SignIn from './components/SignIn/SignIn';
+import Register from './components/Register/Register';
 import 'tachyons';
-import ParticlesBg from 'particles-bg';
 
 // Your PAT (Personal Access Token) can be found in the portal under Authentification
 const PAT = 'bb06795ea60a45d2a210faee14877836';
@@ -22,6 +23,8 @@ function App() {
   const [input, setInput] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [box, setBox] = useState({});
+  const [route, setRoute] = useState('signout');
+  const [isSignedIn, setIsSignedIn] = useState(false);
 
   const onInputChange = (event) => {
     setInput(event.target.value);
@@ -75,14 +78,31 @@ function App() {
       .then((result) => displayFacebox(calculateFaceLocation(result)))
       .catch((error) => console.log('error', error));
   };
+
+  const onRouteChange = (routeChange) => {
+    if (route === 'signout') {
+      setIsSignedIn(false);
+    } else if (route === 'home') {
+      setIsSignedIn(true);
+    }
+    setRoute(routeChange);
+  };
+
   return (
     <div className='App'>
-      <ParticlesBg type='circles' bg={true} />
-      <Navigation />
-      <Logo />
-      <Rank />
-      <ImageLinkForm onInputChange={onInputChange} onButtonSubmit={onButtonSubmit} />
-      <FaceRecognition box={box} imageUrl={imageUrl} />
+      {route === 'home' ? (
+        <>
+          <Navigation onRouteChange={onRouteChange} />
+          <Logo />
+          <Rank />
+          <ImageLinkForm onInputChange={onInputChange} onButtonSubmit={onButtonSubmit} />
+          <FaceRecognition box={box} imageUrl={imageUrl} isSignedIn={isSignedIn} />
+        </>
+      ) : route === 'signout' ? (
+        <SignIn onRouteChange={onRouteChange} />
+      ) : (
+        <Register onRouteChange={onRouteChange} />
+      )}
     </div>
   );
 }
