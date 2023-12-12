@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import Navigation from './components/Navigation/Navigation';
 import Logo from './components/Logo/Logo';
@@ -25,9 +25,30 @@ function App() {
   const [box, setBox] = useState({});
   const [route, setRoute] = useState('signout');
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [user, setUser] = useState({
+    id: '',
+    name: '',
+    email: '',
+    entries: 0,
+    joined: '',
+  });
 
+  useEffect(() => {
+    fetch('http://localhost:3000/').then((response) => response.json());
+  });
+
+  function loadUserProfile(data) {
+    setUser({
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      entries: data.entries,
+      joined: data.joined,
+    });
+  }
   const onInputChange = (event) => {
     setInput(event.target.value);
+    console.log(input);
   };
 
   const calculateFaceLocation = (data) => {
@@ -44,11 +65,13 @@ function App() {
   };
 
   const displayFacebox = (box) => {
+    console.log(box);
     setBox(box);
   };
 
-  const onButtonSubmit = () => {
+  const onImageSubmit = () => {
     setImageUrl(input);
+    console.log(imageUrl);
     // Face Recognition API
     const raw = JSON.stringify({
       user_app_id: {
@@ -74,7 +97,18 @@ function App() {
       body: raw,
     };
     fetch('https://api.clarifai.com/v2/models/' + MODEL_ID + '/outputs', requestOptions)
-      .then((response) => response.json())
+      .then((response) => {
+        if (response) {
+          fetch('http://localhost:3000/image', {
+            method: 'put',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: user.id,
+            }),
+          });
+        }
+      })
+      //.then((response) => response.json())
       .then((result) => displayFacebox(calculateFaceLocation(result)))
       .catch((error) => console.log('error', error));
   };
@@ -94,14 +128,14 @@ function App() {
         <>
           <Navigation onRouteChange={onRouteChange} />
           <Logo />
-          <Rank />
-          <ImageLinkForm onInputChange={onInputChange} onButtonSubmit={onButtonSubmit} />
+          <Rank name={user.name} entries={user.entries} />
+          <ImageLinkForm onInputChange={onInputChange} onImageSubmit={onImageSubmit} />
           <FaceRecognition box={box} imageUrl={imageUrl} isSignedIn={isSignedIn} />
         </>
       ) : route === 'signout' ? (
-        <SignIn onRouteChange={onRouteChange} />
+        <SignIn onRouteChange={onRouteChange} loadUserProfile={loadUserProfile} />
       ) : (
-        <Register onRouteChange={onRouteChange} />
+        <Register onRouteChange={onRouteChange} loadUserProfile={loadUserProfile} />
       )}
     </div>
   );
