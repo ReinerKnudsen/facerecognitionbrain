@@ -20,7 +20,6 @@ const MODEL_ID = 'face-detection';
 //const IMAGE_URL = imageUrl;
 
 function App() {
-  const [input, setInput] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [box, setBox] = useState({});
   const [route, setRoute] = useState('signout');
@@ -47,8 +46,7 @@ function App() {
     });
   }
   const onInputChange = (event) => {
-    setInput(event.target.value);
-    console.log(input);
+    setImageUrl(event.target.value);
   };
 
   const calculateFaceLocation = (data) => {
@@ -65,13 +63,10 @@ function App() {
   };
 
   const displayFacebox = (box) => {
-    console.log(box);
     setBox(box);
   };
 
   const onImageSubmit = () => {
-    setImageUrl(input);
-    console.log(imageUrl);
     // Face Recognition API
     const raw = JSON.stringify({
       user_app_id: {
@@ -97,18 +92,7 @@ function App() {
       body: raw,
     };
     fetch('https://api.clarifai.com/v2/models/' + MODEL_ID + '/outputs', requestOptions)
-      .then((response) => {
-        if (response) {
-          fetch('http://localhost:3000/image', {
-            method: 'put',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: user.id,
-            }),
-          });
-        }
-      })
-      //.then((response) => response.json())
+      .then((response) => response.json())
       .then((result) => displayFacebox(calculateFaceLocation(result)))
       .catch((error) => console.log('error', error));
   };
