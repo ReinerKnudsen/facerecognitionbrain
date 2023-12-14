@@ -48,6 +48,15 @@ function App() {
       joined: data.joined,
     });
   }
+
+  const resetAppState = () => {
+    setImageUrl(initialstate.imageUrl);
+    setBox(initialstate.box);
+    setRoute(initialstate.route);
+    setIsSignedIn(initialstate.isSignedIn);
+    setUser(initialstate.user);
+  };
+
   const onInputChange = (event) => {
     setImageUrl(event.target.value);
   };
@@ -121,6 +130,7 @@ function App() {
   const onRouteChange = (routeChange) => {
     if (route === 'signout') {
       setIsSignedIn(false);
+      //resetAppState();
     } else if (route === 'home') {
       setIsSignedIn(true);
     }
