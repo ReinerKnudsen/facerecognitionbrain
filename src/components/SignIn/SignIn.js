@@ -23,9 +23,9 @@ function SignIn({ onRouteChange, loadUserProfile }) {
       }),
     })
       .then((response) => response.json())
-      .then((data) => {
-        if (data.id) {
-          loadUserProfile(data);
+      .then((user) => {
+        if (user.id) {
+          loadUserProfile(user);
           onRouteChange('home');
         }
       });

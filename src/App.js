@@ -9,28 +9,31 @@ import SignIn from './components/SignIn/SignIn';
 import Register from './components/Register/Register';
 import 'tachyons';
 
-// Your PAT (Personal Access Token) can be found in the portal under Authentification
 const PAT = 'bb06795ea60a45d2a210faee14877836';
-// Specify the correct user_id/app_id pairings
-// Since you're making inferences outside your app's scope
 const USER_ID = 'reinerknudsen';
 const APP_ID = 'smartbrain';
-// Change these to whatever model and image URL you want to use
 const MODEL_ID = 'face-detection';
-//const IMAGE_URL = imageUrl;
 
-function App() {
-  const [imageUrl, setImageUrl] = useState('');
-  const [box, setBox] = useState({});
-  const [route, setRoute] = useState('signout');
-  const [isSignedIn, setIsSignedIn] = useState(false);
-  const [user, setUser] = useState({
+const initialstate = {
+  imageUrl: '',
+  box: {},
+  route: 'signout',
+  isSignedIn: false,
+  user: {
     id: '',
     name: '',
     email: '',
-    entries: 0,
+    entries: '',
     joined: '',
-  });
+  },
+};
+
+function App() {
+  const [imageUrl, setImageUrl] = useState(initialstate.imageUrl);
+  const [box, setBox] = useState(initialstate.box);
+  const [route, setRoute] = useState(initialstate.route);
+  const [isSignedIn, setIsSignedIn] = useState(initialstate.isSignedIn);
+  const [user, setUser] = useState(initialstate.user);
 
   useEffect(() => {
     fetch('http://localhost:3000/').then((response) => response.json());
@@ -50,6 +53,7 @@ function App() {
   };
 
   const calculateFaceLocation = (data) => {
+    //debugger;
     const faceData = data.outputs[0].data.regions[0].region_info.bounding_box;
     const image = document.getElementById('inputimage');
     const width = Number(image.width);
@@ -93,8 +97,25 @@ function App() {
     };
     fetch('https://api.clarifai.com/v2/models/' + MODEL_ID + '/outputs', requestOptions)
       .then((response) => response.json())
-      .then((result) => displayFacebox(calculateFaceLocation(result)))
-      .catch((error) => console.log('error', error));
+      //.then((data) => displayFacebox(calculateFaceLocation(data)))
+      .then((data) => {
+        if (data) {
+          fetch('http://localhost:3000/image', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: user.id,
+            }),
+          })
+            .then((response) => response.json())
+            .then((count) => {
+              setUser({ name: user.name, entries: count });
+            })
+            .catch((err) => console.log('User not found', err));
+        }
+        displayFacebox(calculateFaceLocation(data));
+      })
+      .catch((err) => console.log('Error in API communication', err));
   };
 
   const onRouteChange = (routeChange) => {
