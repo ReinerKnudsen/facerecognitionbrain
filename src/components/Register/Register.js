@@ -29,7 +29,7 @@ const Register = ({ onRouteChange, loadUserProfile }) => {
     })
       .then((response) => response.json())
       .then((user) => {
-        if (user) {
+        if (user.id) {
           loadUserProfile(user);
           onRouteChange('home');
         }

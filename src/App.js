@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './App.css';
 import Navigation from './components/Navigation/Navigation';
 import Logo from './components/Logo/Logo';
@@ -9,15 +9,10 @@ import SignIn from './components/SignIn/SignIn';
 import Register from './components/Register/Register';
 import 'tachyons';
 
-const PAT = 'bb06795ea60a45d2a210faee14877836';
-const USER_ID = 'reinerknudsen';
-const APP_ID = 'smartbrain';
-const MODEL_ID = 'face-detection';
-
 const initialstate = {
   imageUrl: '',
   box: {},
-  route: 'signout',
+  route: 'signin',
   isSignedIn: false,
   user: {
     id: '',
@@ -35,11 +30,8 @@ function App() {
   const [isSignedIn, setIsSignedIn] = useState(initialstate.isSignedIn);
   const [user, setUser] = useState(initialstate.user);
 
-  useEffect(() => {
-    fetch('http://localhost:3000/').then((response) => response.json());
-  });
-
   function loadUserProfile(data) {
+    console.log('Load profile data', data);
     setUser({
       id: data.id,
       name: data.name,
@@ -50,6 +42,7 @@ function App() {
   }
 
   const resetAppState = () => {
+    console.log('Reset App State');
     setImageUrl(initialstate.imageUrl);
     setBox(initialstate.box);
     setRoute(initialstate.route);
@@ -62,8 +55,7 @@ function App() {
   };
 
   const calculateFaceLocation = (data) => {
-    //debugger;
-    const faceData = data.outputs[0].data.regions[0].region_info.bounding_box;
+    const faceData = data.regions[0].region_info.bounding_box;
     const image = document.getElementById('inputimage');
     const width = Number(image.width);
     const height = Number(image.height);
@@ -79,60 +71,49 @@ function App() {
     setBox(box);
   };
 
-  const onImageSubmit = () => {
-    // Face Recognition API
-    const raw = JSON.stringify({
-      user_app_id: {
-        user_id: USER_ID,
-        app_id: APP_ID,
-      },
-      inputs: [
-        {
-          data: {
-            image: {
-              url: imageUrl,
-            },
-          },
-        },
-      ],
-    });
-    const requestOptions = {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        Authorization: 'Key ' + PAT,
-      },
-      body: raw,
-    };
-    fetch('https://api.clarifai.com/v2/models/' + MODEL_ID + '/outputs', requestOptions)
-      .then((response) => response.json())
-      //.then((data) => displayFacebox(calculateFaceLocation(data)))
-      .then((data) => {
-        if (data) {
-          fetch('http://localhost:3000/image', {
+  async function onImageSubmit() {
+    try {
+      let response = await fetch('http://localhost:3000/imageUrl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl,
+        }),
+      });
+      let data = await response.json();
+      if (data) {
+        try {
+          let thisUser = await fetch('http://localhost:3000/image', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               id: user.id,
             }),
-          })
-            .then((response) => response.json())
-            .then((count) => {
-              setUser({ name: user.name, entries: count });
-            })
-            .catch((err) => console.log('User not found', err));
+          });
+          let count = await thisUser.json();
+          setUser({ name: user.name, entries: count });
+        } catch (error) {
+          console.log('App.js (102): User not found', error);
         }
-        displayFacebox(calculateFaceLocation(data));
-      })
-      .catch((err) => console.log('Error in API communication', err));
-  };
+      }
+      displayFacebox(calculateFaceLocation(data));
+    } catch (error) {
+      console.log('App.js (106) There was an issue catching the face coordinates', error);
+    }
+  }
 
   const onRouteChange = (routeChange) => {
-    if (route === 'signout') {
-      setIsSignedIn(false);
-      //resetAppState();
-    } else if (route === 'home') {
-      setIsSignedIn(true);
+    console.log(`Von Route ${route} nach Route ${routeChange}`);
+    switch (routeChange) {
+      case 'home':
+        setIsSignedIn(true);
+        break;
+      case 'signout':
+        resetAppState();
+        setIsSignedIn(false);
+        break;
+      default:
+        break;
     }
     setRoute(routeChange);
   };
@@ -147,7 +128,7 @@ function App() {
           <ImageLinkForm onInputChange={onInputChange} onImageSubmit={onImageSubmit} />
           <FaceRecognition box={box} imageUrl={imageUrl} isSignedIn={isSignedIn} />
         </>
-      ) : route === 'signout' ? (
+      ) : route === 'signin' || route === 'signout' ? (
         <SignIn onRouteChange={onRouteChange} loadUserProfile={loadUserProfile} />
       ) : (
         <Register onRouteChange={onRouteChange} loadUserProfile={loadUserProfile} />

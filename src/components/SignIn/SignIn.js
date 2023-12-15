@@ -26,7 +26,10 @@ function SignIn({ onRouteChange, loadUserProfile }) {
       .then((user) => {
         if (user.id) {
           loadUserProfile(user);
+          console.log(user);
           onRouteChange('home');
+        } else {
+          onRouteChange('signin');
         }
       });
   };
